@@ -109,6 +109,11 @@ class ETL():
                 else:
                     print("The dataframe is different, unifying")
                     df = pd.concat([df_raw, df]) # Concatenate dataframes
+
+                    # Transform all columns into strings
+                    for col in df.columns:
+                        df[col] = df[col].astype(str)
+
                     df.drop_duplicates(inplace=True) # Drop duplicates
                     df.reset_index(drop=True, inplace=True) # Reset index
             
@@ -121,9 +126,8 @@ class ETL():
             cols_needed = [
                 'propertyCode', 'price', 'numPhotos', 'size', 
                 'floor', 'rooms', 'bathrooms', 'latitude', 'longitude', 
-                'propertyType', 'status', 'parkingSpace', 'exterior', 'hasLift', 
-                'hasPlan', 'has360', 'has3DTour', 'hasVideo', 
-                'newDevelopmentFinished'
+                'propertyType', 'parkingSpace', 'exterior', 'hasLift', 
+                'hasPlan', 'has360', 'has3DTour', 'hasVideo'
                 ]
             df = df[cols_needed] # Keep only columns needed
 
@@ -131,33 +135,6 @@ class ETL():
             df.set_index('propertyCode', inplace=True)
 
             print("drop_columns process was successful")
-            return df
-
-        def process_status(df):
-            '''
-            This function process the status of the property.
-
-            Parameters:
-            -----------
-            df: DataFrame with the raw data of status, newDevelopmentFinished.
-
-            Returns:
-            --------
-            df: DataFrame with the raw data processed.
-            '''
-
-            # Create the columns that will replace the status column: renew and new_development.
-            df['renew'] = df['status'].apply(lambda x: True if x == 'renew' else False)
-            df['new_development'] = df['status'].apply(lambda x: True if x == 'newdevelopment' else False)
-
-            # drop the status column
-            df.drop('status', axis=1, inplace=True)
-
-            # Same with newDevelopmentFinished
-            df['isFinished'] = df['newDevelopmentFinished'].apply(lambda x: False if x == False else True)
-            df.drop('newDevelopmentFinished', axis=1, inplace=True)
-
-            print("process_status process was successful")
             return df
 
         def process_parkingSpace(df):
@@ -220,12 +197,16 @@ class ETL():
             property_type = floor_nan['propertyType'].value_counts().index.to_list()
 
             for i in property_type:
-                # get the mode of the propertyType column
-                mode = df['floor'][df['propertyType'] == i].mode()[0]
-                # get the index of the rows with the propertyType i and the floor is null
-                index = df[(df['propertyType'] == i) & (df['floor'].isnull())].index
-                # replace the nan with the mode
-                df.loc[index, 'floor'] = mode
+                if i == 'chalet':
+                    index = df[(df['propertyType'] == i) & (df['floor'].isnull())].index
+                    df.loc[index, 'floor'] = 0
+                else:
+                    # get the mode of the propertyType column
+                    mode = df['floor'][df['propertyType'] == i].mode()[0]
+                    # get the index of the rows with the propertyType i and the floor is null
+                    index = df[(df['propertyType'] == i) & (df['floor'].isnull())].index
+                    # replace the nan with the mode
+                    df.loc[index, 'floor'] = mode
 
             # where floor is 'bj' or 'en' put 0
             df.loc[df['floor'] == 'bj', 'floor'] = 0
@@ -286,11 +267,8 @@ class ETL():
 
             # boolean types
             df['exterior'] = df['exterior'].astype(bool)
-            df['renew'] = df['renew'].astype(bool)
-            df['new_development'] = df['new_development'].astype(bool)
             df['hasParkingSpace'] = df['hasParkingSpace'].astype(bool)
             df['isParkingSpaceIncludedInPrice'] = df['isParkingSpaceIncludedInPrice'].astype(bool)
-            df['isFinished'] = df['isFinished'].astype(bool)
             df['hasLift'] = df['hasLift'].astype(bool)
             df['hasPlan'] = df['hasPlan'].astype(bool)
             df['has360'] = df['has360'].astype(bool)
@@ -301,9 +279,9 @@ class ETL():
             df['propertyType'] = df['propertyType'].astype(str)
 
             order_of_cols = ['price', 'numPhotos', 'floor', 'rooms', 'bathrooms',
-            'size', 'parkingSpacePrice', 'latitude', 'longitude', 'exterior', 'renew',
-            'new_development', 'hasParkingSpace', 'isParkingSpaceIncludedInPrice',
-            'isFinished', 'hasLift', 'hasPlan', 'has360', 'has3DTour', 'hasVideo',
+            'size', 'parkingSpacePrice', 'latitude', 'longitude', 'exterior', 
+            'hasParkingSpace', 'isParkingSpaceIncludedInPrice', 
+            'hasLift', 'hasPlan', 'has360', 'has3DTour', 'hasVideo',
             'propertyType']
             
             df = df[order_of_cols]
@@ -352,8 +330,9 @@ class ETL():
             # create the cluster
             cluster = pickle.load(open('models/kmeans_clustering.pkl', 'rb'))
             # get the cluster of the latitude and longitude
-            df['cluster'] = cluster.predict(df[['latitude', 'longitude']])
-
+            df['direction'] = cluster.predict(df[['latitude', 'longitude']])
+            df['direction'] = df['direction'].map({0: 'central', 1: 'south', 2: 'north', 3: 'west'})
+            
             # drop the latitude and longitude columns
             df.drop(columns=['latitude', 'longitude'], inplace=True)
 
@@ -363,7 +342,6 @@ class ETL():
         df_processed = unify_df(df) # unify the dataframe with the raw data (if needed)
         df_processed = drop_columns(df_processed) # drop the columns that are not needed
 
-        df_processed = process_status(df_processed) # process the status column
         df_processed = process_parkingSpace(df_processed) # process the parkingSpace column
         df_processed = process_floor(df_processed) # process the floor column
         df_processed = process_hasLift(df_processed) # process the hasLift column
