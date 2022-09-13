@@ -96,6 +96,10 @@ X_test_prep  = preprocessor.transform(X_test)
 # Preprocess target variable
 y_train_prep, lamda = box_cox_transform(y_train)
 
+# Save preprocessor and lambda value for later use
+pickle.dump(preprocessor, open("models/preprocessor.pkl", "wb"))
+pickle.dump(lamda, open("models/lamda_value.pkl", "wb"))
+
 print(f"Data preprocessing completed")
 
 # =============================================================================
