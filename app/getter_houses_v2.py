@@ -52,8 +52,8 @@ def get_oauth_token():
     url = "https://api.idealista.com/oauth/token"
 
     load_dotenv(find_dotenv('../')) # Load .env file
-    apikey = os.environ.get("KEY")
-    secret = os.environ.get("VALUE")
+    apikey ="09cltgbrb34frrxwrxcgg6koolvje1bn"
+    secret = os.environ.get(apikey)
     apikey_secret = apikey + ':' + secret
 
     auth = str(base64.b64encode(bytes(apikey_secret, 'utf-8')))[2:][:-1] # Get base64 encoded string
