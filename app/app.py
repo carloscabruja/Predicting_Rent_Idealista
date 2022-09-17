@@ -46,6 +46,7 @@ def predict():
 
         # Get the house data
         house = get_house_attributes(url)
+        real_price = house['price'][0]
 
         # Load the model, preprocessor and lambda scaler
         model = pickle.load(open('../src/models/my_model_histgb.pkl', 'rb'))
@@ -63,7 +64,7 @@ def predict():
 
         
         
-        return render_template('index.html', prediction_text=f"El precio de la casa según el algoritmo es de {price[0]}€")
+        return render_template('index.html', prediction_text=f"El precio de la casa según el algoritmo es de {price[0]}€ y el precio real es de {real_price}€")
     else:
         return render_template('index.html', prediction_text=f"La URL no es válida")
 
