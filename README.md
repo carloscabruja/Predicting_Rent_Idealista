@@ -12,7 +12,7 @@ This model is deployed in a web application using Flask and Heroku. The web appl
 2. Paste the link in the web application and click on the button "Predecir".
 3. Done! You will see the predicted price of the rent and the real price of the rent below...
 
-### Requirements 📋 and Installation 🔧
+## Requirements 📋 and Installation 🔧
 
 This project was developed using Python 3.7.6. The requirements are in the file requirements.txt. You can install all the requirements using the following command:
 
