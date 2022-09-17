@@ -11,8 +11,7 @@ import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_bootstrap import Bootstrap
 from getter_houses_v2 import *
-
-
+from blosc import decompress
 
 # =============================================================================
 
@@ -49,7 +48,8 @@ def predict():
         real_price = house['price'][0]
 
         # Load the model, preprocessor and lambda scaler
-        model = pickle.load(open('../src/models/my_model_histgb.pkl', 'rb'))
+        model_compressed = pickle.load(open('../src/models/my_model_rf_compressed.pkl', 'rb'))
+        model = pickle.loads(decompress(model_compressed))
         preprocessor = pickle.load(open('../src/models/preprocessor.pkl', 'rb'))
         lamda = pickle.load(open('../src/models/lamda_value.pkl', 'rb'))
 
